@@ -1,12 +1,16 @@
 package com.appsdeveloperblog.tutorials.junit.io;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import javax.persistence.PersistenceException;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DataJpaTest
 public class UserEntityIntegrationTest {
@@ -14,16 +18,20 @@ public class UserEntityIntegrationTest {
     @Autowired
     private TestEntityManager testEntityManager;
 
-    @Test
-    void testUserEntity_whenValidUserDetailsProvided_shouldReturnStoredUserDetails() {
-        // Arrange
-        UserEntity userEntity = new UserEntity();
+    UserEntity userEntity;
+
+    @BeforeEach
+    void setup() {
+        userEntity = new UserEntity();
         userEntity.setUserId(UUID.randomUUID().toString());
         userEntity.setFirstName("Sergey");
         userEntity.setLastName("Kargopolov");
         userEntity.setEmail("test@test.com");
         userEntity.setEncryptedPassword("12345678");
+    }
 
+    @Test
+    void testUserEntity_whenValidUserDetailsProvided_shouldReturnStoredUserDetails() {
         // Act
         UserEntity storedUserEntity = testEntityManager.persistAndFlush(userEntity);
 
@@ -35,4 +43,16 @@ public class UserEntityIntegrationTest {
         Assertions.assertEquals(userEntity.getEmail(), storedUserEntity.getEmail());
         Assertions.assertEquals(userEntity.getEncryptedPassword(), storedUserEntity.getEncryptedPassword());
     }
+
+    @Test
+    void testUserEntity_whenFirstNameIsTooLong_shouldThrowException() {
+        // Arrange
+        userEntity.setFirstName("123456789012345678901234567890123456789012345678901234567890");
+
+        // Assert & Act
+        Assertions.assertThrows(PersistenceException.class, ()->{
+            testEntityManager.persistAndFlush(userEntity);
+        }, "Was expecting a PersistenceException to be thrown.");
+    }
+
 }
