@@ -55,4 +55,24 @@ public class UserEntityIntegrationTest {
         }, "Was expecting a PersistenceException to be thrown.");
     }
 
+    @Test
+    void testUserEntity_whenExistingUserIdProvided_shouldThrowException() {
+        // Arrange
+        // Create and Persist a new User Entity
+        UserEntity newEntity = new UserEntity();
+        newEntity.setUserId("1");
+        newEntity.setEmail("test2@test.com");
+        newEntity.setFirstName("test");
+        newEntity.setLastName("test");
+        newEntity.setEncryptedPassword("test");
+        testEntityManager.persistAndFlush(newEntity);
+
+        // Update existing user entity with the same user id
+        userEntity.setUserId("1");
+
+        // Act & Assert
+        assertThrows(PersistenceException.class, ()-> {
+            testEntityManager.persistAndFlush(userEntity);
+        }, "Expected PersistenceException to be thrown here");
+    }
 }
